@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Трекер LIFE</title>
+<style>
+:root{
+  --accent:#FFD400;
+  --accent-dark:#F0C000;
+  --accent-soft:#FFF6C2;
+  --bg:#F6F6F4;
+  --card:#EFEFEA;
+  --text:#222;
+  --muted:#9A9A92;
+  --danger:#E5484D;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:90px}
+.app{max-width:520px;margin:0 auto;padding:16px 16px 0}
+h1.title{font-size:26px;font-weight:800;margin:18px 0 4px}
+p.sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+.card{background:var(--card);border-radius:20px;padding:18px;margin-bottom:14px}
+.hero{background:linear-gradient(135deg,#FFF9D6,#FFF3B0);border-radius:24px;padding:22px;margin-bottom:16px}
+.hero .num{font-size:44px;font-weight:800}
+.hero .lbl{color:#8a8a7a;font-size:14px}
+.week{display:flex;justify-content:space-between;margin:18px 0}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.dot{width:34px;height:34px;border-radius:50%;background:#E4E4DE;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+.dot.done{background:var(--accent);color:#7a5c00;font-weight:700}
+.day.today{font-weight:700;color:var(--text)}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:14px;margin-bottom:8px}
+.check{width:26px;height:26px;border-radius:50%;background:#DDDDD6;border:2px solid #CFCFC8;flex-shrink:0;cursor:pointer}
+.check.on{background:var(--accent);border-color:var(--accent)}
+.check.on::after{content:'✓';color:#5c4500;font-weight:800}
+.row .name{flex:1;font-size:16px}
+.row.done .name{color:var(--muted);text-decoration:line-through}
+.del{width:30px;height:30px;border:none;background:transparent;color:#C9C9C2;font-size:20px;cursor:pointer;flex-shrink:0}
+.del:active{color:var(--danger)}
+.btn{display:block;width:100%;background:var(--accent);border:none;border-radius:16px;padding:15px;font-size:16px;font-weight:700;color:#5c4500;cursor:pointer;margin:10px 0}
+.btn:active{background:var(--accent-dark)}
+.btn.ghost{background:#E9E9E3;color:var(--text)}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ECECE7;display:flex;justify-content:space-around;padding:8px 0 22px;max-width:520px;margin:0 auto;z-index:10}
+.tab{background:none;border:none;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex:1}
+.tab .ic{font-size:22px}
+.tab.active{color:var(--accent-dark);font-weight:700}
+.empty{text-align:center;color:var(--muted);padding:40px 20px}
+.emoji-big{font-size:44px;margin-bottom:10px}
+.person{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:14px;margin-bottom:8px}
+.person .av{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.person .who{flex:1}
+.person .who b{display:block;font-size:15px}
+.person .who span{color:var(--muted);font-size:13px}
+.medal{font-size:20px;width:26px;text-align:center;flex-shrink:0}
+.firebtn{background:#FFF3B0;border:none;border-radius:12px;padding:8px 12px;font-size:16px;cursor:pointer}
+.prog{height:8px;background:#E4E4DE;border-radius:4px;overflow:hidden;margin-top:10px}
+.prog>div{height:100%;background:var(--accent);border-radius:4px}
+.moods{display:flex;justify-content:space-between;margin:14px 0}
+.moods button{font-size:30px;background:var(--card);border:2px solid transparent;border-radius:16px;padding:10px 12px;cursor:pointer}
+.moods button.sel{border-color:var(--accent);background:var(--accent-soft)}
+.hist{margin-top:10px}
+.hist .row{background:transparent;padding:8px 2px;border-radius:0;border-bottom:1px solid #E7E7E1}
+.togrow{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px}
+.togrow .tt b{font-size:16px;display:block}
+.togrow .tt span{color:var(--muted);font-size:13px}
+.tog{width:50px;height:30px;border-radius:15px;background:#D8D8D2;position:relative;cursor:pointer;flex-shrink:0;border:none;transition:.2s}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s}
+.tog.on{background:var(--accent)}
+.tog.on::after{left:23px}
+.setrow{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px}
+.timepick{font-size:16px;font-weight:700;background:#fff;border:none;padding:8px 12px;border-radius:12px}
+.danger{color:var(--danger);background:#FDECEC}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ПРИВЫЧКИ -->
+<section id="tab-habits">
+  <h1 class="title">Привычки</h1>
+  <p class="sub">Отмечай выполненное — день засчитывается, когда всё закрыто</p>
+  <div class="hero">
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="font-size:40px">🔥</span>
+      <div>
+        <div class="num" id="streakNum">0</div>
+        <div class="lbl">дней в дисциплине</div>
+      </div>
+    </div>
+    <div class="week" id="weekRow"></div>
+    <div id="dayStatus" style="font-weight:700;color:#8a8a00">День ещё не закрыт</div>
+  </div>
+  <div id="habitsList"></div>
+  <button class="btn" onclick="addHabit()">＋ Добавить привычку</button>
+</section>
+
+<!-- РЕЙТИНГ -->
+<section id="tab-rating" style="display:none">
+  <h1 class="title">Рейтинг</h1>
+  <p class="sub">Побеждает самая длинная серия дней подряд</p>
+  <div id="ratingList"></div>
+  <button class="btn" onclick="addPerson()">＋ Добавить участника</button>
+</section>
+
+<!-- ВЫЗОВЫ -->
+<section id="tab-challenges" style="display:none">
+  <h1 class="title">Вызовы</h1>
+  <p class="sub">Ставь себе цели и следи за прогрессом</p>
+  <div id="chList"></div>
+  <button class="btn" onclick="addChallenge()">＋ Добавить вызов</button>
+</section>
+
+<!-- НАСТРОЕНИЕ -->
+<section id="tab-mood" style="display:none">
+  <h1 class="title">Настроение</h1>
+  <p class="sub">Как ты себя чувствуешь сегодня?</p>
+  <div class="card">
+    <div class="moods" id="moodPick">
+      <button onclick="pickMood(0,this)">😄</button>
+      <button onclick="pickMood(1,this)">🙂</button>
+      <button onclick="pickMood(2,this)">😐</button>
+      <button onclick="pickMood(3,this)">🙁</button>
+      <button onclick="pickMood(4,this)">😢</button>
+    </div>
+    <textarea id="moodNote" placeholder="Заметка за день..." style="width:100%;min-height:70px;border:none;border-radius:12px;padding:12px;font-size:15px;background:#fff;font-family:inherit"></textarea>
+    <button class="btn" onclick="saveMood()">Сохранить</button>
+  </div>
+  <h1 class="title" style="font-size:20px">История</h1>
+  <div class="card hist" id="moodHist"><span style="color:var(--muted)">Пока пусто</span></div>
+</section>
+
+<!-- НАСТРОЙКИ -->
+<section id="tab-settings" style="display:none">
+  <h1 class="title">Настройки</h1>
+  <p class="sub">Напоминания и прочее</p>
+  <div class="togrow"><div class="tt"><b>Утреннее сообщение</b><span>Серия и задания на день</span></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+  <div class="setrow"><div class="tt"><b>Время утром</b><span>По вашему часовому поясу</span></div><input class="timepick" type="time" value="08:00"></div>
+  <div class="togrow"><div class="tt"><b>Вечернее напоминание</b><span>Придёт, если день ещё не закрыт</span></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+  <div class="setrow"><div class="tt"><b>Время вечером</b><span>По вашему часовому поясу</span></div><input class="timepick" type="time" value="20:00"></div>
+  <div class="togrow"><div class="tt"><b>Пей воду! 💧</b><span>Напоминание пить воду в 10:00 и 15:00</span></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+  <div class="togrow"><div class="tt"><b>Скрыть имя в рейтинге</b><span>Вы будете показаны как «Аноним»</span></div><button class="tog" onclick="this.classList.toggle('on')"></button></div>
+  <button class="btn danger" onclick="resetAll()">Сбросить весь прогресс</button>
+</section>
+
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('habits',this)"><span class="ic">📋</span>Привычки</button>
+  <button class="tab" onclick="showTab('rating',this)"><span class="ic">🏆</span>Рейтинг</button>
+  <button class="tab" onclick="showTab('challenges',this)"><span class="ic">⚡</span>Вызовы</button>
+  <button class="tab" onclick="showTab('mood',this)"><span class="ic">😊</span>Настроение</button>
+  <button class="tab" onclick="showTab('settings',this)"><span class="ic">👤</span>Настройки</button>
+</div>
+
+<script>
+const KEY='life_tracker_v2';
+const DAYS=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const MOODS=['😄','🙂','😐','🙁','😢'];
+let D=JSON.parse(localStorage.getItem(KEY)||'null')||{
+  habits:[],done:{},days:{},people:[],challenges:[],moods:[]
+};
+function save(){localStorage.setItem(KEY,JSON.stringify(D))}
+
+function showTab(t,btn){
+  ['habits','rating','challenges','mood','settings'].forEach(x=>{
+    document.getElementById('tab-'+x).style.display=x===t?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ---- неделя ---- */
+function renderWeek(){
+  const row=document.getElementById('weekRow');
+  const now=new Date();
+  row.innerHTML='';
+  for(let i=6;i>=0;i--){
+    const d=new Date(now); d.setDate(now.getDate()-i);
+    const iso=d.toISOString().slice(0,10);
+    const done=D.days[iso];
+    row.insertAdjacentHTML('beforeend',
+      `<div class="day"><div class="dot ${done?'done':''}">${done?'✓':''}</div>${i===0?'<span class="today">Сегодня</span>':'<span>'+DAYS[d.getDay()]+'</span>'}</div>`);
+  }
+}
+
+/* ---- привычки ---- */
+function renderHabits(){
+  const list=document.getElementById('habitsList');
+  const iso=new Date().toISOString().slice(0,10);
+  if(!D.habits.length){
+    list.innerHTML='<div class="empty"><div class="emoji-big">🌱</div>Пока нет привычек.<br>Добавь первую — например, «Утренняя зарядка»</div>';
+  } else {
+    list.innerHTML=D.habits.map((h,i)=>`
+      <div class="row ${D.done[iso]&&D.done[iso][i]?'done':''}">
+        <div class="check ${D.done[iso]&&D.done[iso][i]?'on':''}" onclick="toggleHabit(${i})"></div>
+        <div class="name">${h}</div>
+        <button class="del" onclick="delHabit(${i})" title="Удалить">✕</button>
+      </div>`).join('');
+  }
+  // серия
+  let s=0; const d=new Date();
+  for(;;){const iso=d.toISOString().slice(0,10);
+    if(D.days[iso]){s++;d.setDate(d.getDate()-1);}else break;}
+  document.getElementById('streakNum').textContent=s;
+  const all=D.habits.length>0&&(D.done[iso]||[]).filter(Boolean).length===D.habits.length;
+  document.getElementById('dayStatus').textContent=all?'День засчитан — так держать! 🔥':'День ещё не закрыт';
+  renderWeek();
+}
+function toggleHabit(i){
+  const iso=new Date().toISOString().slice(0,10);
+  D.done[iso]=D.done[iso]||[];
+  D.done[iso][i]=!D.done[iso][i];
+  const all=D.habits.length>0&&D.done[iso].filter(Boolean).length===D.habits.length;
+  if(all)D.days[iso]=true; else delete D.days[iso];
+  save();renderHabits();
+}
+function addHabit(){
+  const n=prompt('Название привычки:'); if(!n)return;
+  D.habits.push(n);save();renderHabits();
+}
+function delHabit(i){
+  D.habits.splice(i,1);
+  Object.keys(D.done).forEach(k=>{D.done[k].splice(i,1);
+    if(D.habits.length&&D.done[k].filter(Boolean).length===D.habits.length)D.days[k]=true;else delete D.days[k];});
+  save();renderHabits();
+}
+
+/* ---- рейтинг ---- */
+function renderRating(){
+  const list=document.getElementById('ratingList');
+  if(!D.people.length){
+    list.innerHTML='<div class="empty"><div class="emoji-big">🏆</div>Рейтинг пуст.<br>Добавь участников — соревнование мотивирует</div>';return;
+  }
+  const sorted=[...D.people].sort((a,b)=>b.streak-a.streak);
+  list.innerHTML=sorted.map((p,i)=>`
+    <div class="person">
+      <span class="medal">${['🥇','🥈','🥉'][i]||(i+1)}</span>
+      <div class="av">${p.name[0].toUpperCase()}</div>
+      <div class="who"><b>${p.name}</b><span>всего ${p.total} дней</span></div>
+      <span style="font-weight:700">🔥 ${p.streak}</span>
+      <button class="del" onclick="delPerson(${D.people.indexOf(p)})" title="Удалить">✕</button>
+    </div>`).join('');
+}
+function addPerson(){
+  const n=prompt('Имя участника:'); if(!n)return;
+  D.people.push({name:n,streak:0,total:0});save();renderRating();
+}
+function delPerson(i){D.people.splice(i,1);save();renderRating();}
+
+/* ---- вызовы ---- */
+function renderCh(){
+  const list=document.getElementById('chList');
+  if(!D.challenges.length){
+    list.innerHTML='<div class="empty"><div class="emoji-big">⚡</div>Вызовов пока нет.<br>Создай первый — например, «30 дней без сахара»</div>';return;
+  }
+  list.innerHTML=D.challenges.map((c,i)=>`
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px">
+        <b style="flex:1">${c.name}</b>
+        <span style="color:var(--muted);font-size:13px">${c.done}/${c.total} дней</span>
+        <button class="del" onclick="delCh(${i})" title="Удалить">✕</button>
+      </div>
+      <div class="prog"><div style="width:${Math.min(100,c.done/c.total*100)}%"></div></div>
+      <button class="btn ghost" style="margin-bottom:0;margin-top:12px" onclick="chStep(${i})">＋ Отметить день</button>
+    </div>`).join('');
+}
+function addChallenge(){
+  const n=prompt('Название вызова:'); if(!n)return;
+  const t=parseInt(prompt('Сколько дней?','30'))||30;
+  D.challenges.push({name:n,total:t,done:0});save();renderCh();
+}
+function chStep(i){D.challenges[i].done=Math.min(D.challenges[i].total,D.challenges[i].done+1);save();renderCh();}
+function delCh(i){D.challenges.splice(i,1);save();renderCh();}
+
+/* ---- настроение ---- */
+let moodSel=-1;
+function pickMood(i,btn){
+  moodSel=i;
+  document.querySelectorAll('#moodPick button').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function saveMood(){
+  if(moodSel<0){alert('Выбери настроение');return;}
+  const iso=new Date().toISOString().slice(0,10);
+  D.moods=D.moods.filter(m=>m.date!==iso);
+  D.moods.unshift({date:iso,m:moodSel,note:document.getElementById('moodNote').value});
+  save();renderMood();
+}
+function delMood(date){D.moods=D.moods.filter(m=>m.date!==date);save();renderMood();}
+function renderMood(){
+  const h=document.getElementById('moodHist');
+  if(!D.moods.length){h.innerHTML='<span style="color:var(--muted)">Пока пусто</span>';return;}
+  h.innerHTML=D.moods.map(m=>{
+    const d=new Date(m.date);
+    return `<div class="row"><span style="font-size:24px">${MOODS[m.m]}</span>
+      <div class="name" style="flex:1"><b style="font-size:14px">${d.toLocaleDateString('ru-RU')}</b><br><span style="color:var(--muted);font-size:13px">${m.note||''}</span></div>
+      <button class="del" onclick="delMood('${m.date}')">✕</button></div>`;
+  }).join('');
+}
+
+/* ---- сброс ---- */
+function resetAll(){
+  if(!confirm('Обнулить весь прогресс? Действие необратимо.'))return;
+  D={habits:[],done:{},days:{},people:D.people,challenges:[],moods:[]};
+  save();renderAll();
+}
+function renderAll(){renderHabits();renderRating();renderCh();renderMood();}
+renderAll();
+</script>
+</body>
+</html>
