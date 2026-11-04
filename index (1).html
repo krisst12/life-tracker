@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Трекер LIFE</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --accent:#FFD400;
+    --accent-dark:#E6B800;
+    --accent-soft:#FFF7CC;
+    --bg:#F6F7F8;
+    --card:#EDEFF1;
+    --text:#1A1A1A;
+    --muted:#8E959B;
+    --line:#E1E3E6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:90px;}
+  .wrap{max-width:520px;margin:0 auto;padding:16px;}
+  /* ---------- вкладки ---------- */
+  nav{position:fixed;bottom:0;left:0;right:0;background:rgba(250,250,251,.95);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:50;}
+  nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted);cursor:pointer;}
+  nav button svg{width:26px;height:26px;stroke:var(--muted);fill:none;stroke-width:1.8;}
+  nav button.active{color:var(--accent-dark);}
+  nav button.active svg{stroke:var(--accent-dark);}
+  .tab{display:none;}
+  .tab.active{display:block;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  h2{font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:26px 0 12px;}
+  /* ---------- карточка серии ---------- */
+  .streak-card{background:linear-gradient(135deg,var(--accent-soft),#FFFDF0);border-radius:22px;padding:22px;margin-top:8px;}
+  .streak-top{display:flex;align-items:center;gap:16px;}
+  .flame{font-size:44px;}
+  .streak-num{font-size:56px;font-weight:800;line-height:1;}
+  .streak-cap{color:var(--muted);font-size:16px;margin-top:4px;}
+  .streak-msg{border-top:1px solid var(--line);margin-top:16px;padding-top:14px;font-weight:700;color:var(--accent-dark);}
+  .support-line{margin-top:6px;color:var(--muted);font-size:15px;}
+  /* ---------- неделя ---------- */
+  .week{display:flex;justify-content:space-between;background:var(--card);border-radius:20px;padding:14px 10px;margin-top:14px;}
+  .day{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;}
+  .day .dot{width:38px;height:38px;border-radius:50%;background:#E3E5E8;}
+  .day.done .dot{background:var(--accent);}
+  .day span{font-size:13px;color:var(--muted);}
+  .day.today span{font-weight:700;color:var(--text);}
+  /* ---------- задания ---------- */
+  .task{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:16px;padding:16px;}
+  .task .check{width:32px;height:32px;border-radius:50%;border:2px solid #C9CDD2;flex:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;}
+  .task.done .check{background:var(--accent);border-color:var(--accent);}
+  .task .name{flex:1;font-size:17px;font-weight:600;}
+  .task.done .name{color:var(--muted);text-decoration:line-through;}
+  .task .bell{color:var(--muted);font-size:18px;}
+  .row-controls{display:flex;gap:10px;align-items:center;justify-content:flex-start;padding:6px 4px;}
+  .row-controls .lbl{font-size:12px;color:var(--muted);}
+  .btn-mini{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;}
+  .btn-mini.del{color:#C93A3A;}
+  .btn-mini.add{color:var(--accent-dark);}
+  /* ---------- рейтинг ---------- */
+  .lead{color:var(--muted);font-size:15px;line-height:1.5;margin-bottom:16px;}
+  .user-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);margin-bottom:2px;}
+  .user-row:first-of-type{border-radius:16px 16px 0 0;}
+  .user-row:last-of-type{border-radius:0 0 16px 16px;margin-bottom:0;}
+  .user-row .rank{width:28px;text-align:center;font-weight:700;color:var(--muted);}
+  .user-row .rank.medal{font-size:22px;}
+  .avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#CFCFCF;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex:none;overflow:hidden;}
+  .u-info{flex:1;min-width:0;}
+  .u-name{font-weight:700;font-size:16px;}
+  .u-sub{font-size:13px;color:var(--muted);}
+  .u-streak{font-size:15px;font-weight:700;white-space:nowrap;}
+  .sup-btn{width:46px;height:46px;border-radius:14px;background:var(--accent-soft);border:none;font-size:20px;cursor:pointer;flex:none;}
+  /* ---------- вызовы ---------- */
+  .chal{background:var(--card);border-radius:18px;padding:18px;margin-bottom:12px;}
+  .chal-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .chal-top .em{font-size:26px;}
+  .chal-top .t{font-weight:700;font-size:16px;flex:1;}
+  .chal-top .badge{font-size:12px;font-weight:700;color:var(--accent-dark);background:var(--accent-soft);padding:4px 10px;border-radius:10px;white-space:nowrap;}
+  .bar{height:8px;border-radius:6px;background:#DDDFE2;overflow:hidden;}
+  .bar i{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width .4s;}
+  .chal-sub{font-size:13px;color:var(--muted);margin-top:8px;}
+  /* ---------- профиль ---------- */
+  .profile-head{display:flex;align-items:center;gap:16px;margin-top:6px;}
+  .profile-head .avatar{width:64px;height:64px;font-size:24px;}
+  .profile-head .n{font-size:24px;font-weight:800;}
+  .profile-head .s{color:var(--muted);font-size:15px;}
+  .stats{display:flex;gap:10px;margin-top:18px;}
+  .stat{flex:1;background:var(--card);border-radius:16px;padding:14px;text-align:center;}
+  .stat b{font-size:26px;font-weight:800;display:block;}
+  .stat span{font-size:12.5px;color:var(--muted);}
+  .freeze{background:var(--card);border-radius:18px;padding:16px;display:flex;gap:14px;align-items:center;margin-top:14px;}
+  .freeze .em{font-size:30px;}
+  .freeze b{font-size:17px;display:block;}
+  .freeze p{color:var(--muted);font-size:14px;margin-top:3px;line-height:1.4;}
+  .ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .ach{background:var(--card);border-radius:16px;padding:14px 8px;text-align:center;}
+  .ach .em{font-size:30px;display:block;margin-bottom:6px;filter:grayscale(1);opacity:.45;}
+  .ach.got{background:var(--accent-soft);outline:2px solid var(--accent);}
+  .ach.got .em{filter:none;opacity:1;}
+  .ach b{font-size:13px;display:block;}
+  .ach span{font-size:11.5px;color:var(--muted);display:block;margin-top:3px;line-height:1.3;}
+  .cal{background:var(--card);border-radius:18px;padding:16px;}
+  .cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-cell{aspect-ratio:1;border-radius:10px;background:#E3E5E8;display:flex;align-items:center;justify-content:center;font-size:12px;color:#B6BAC0;}
+  .cal-cell.done{background:var(--accent);color:#4A3D00;font-weight:700;}
+  .cal-cell.today{outline:2.5px solid var(--accent-dark);}
+  /* ---------- настройки ---------- */
+  .settings{background:var(--card);border-radius:18px;overflow:hidden;}
+  .set-row{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--line);}
+  .set-row:last-child{border-bottom:none;}
+  .set-info{flex:1;}
+  .set-info b{font-size:16px;font-weight:700;display:block;}
+  .set-info span{font-size:13.5px;color:var(--muted);}
+  .toggle{width:52px;height:32px;border-radius:20px;background:#D5D8DC;position:relative;cursor:pointer;flex:none;transition:background .2s;}
+  .toggle.on{background:var(--accent);}
+  .toggle::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:left .2s;}
+  .toggle.on::after{left:23px;}
+  .time-pick{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font-size:16px;font-weight:600;color:var(--text);}
+  .danger{width:100%;border:1.5px solid #E5B8B8;background:#fff;color:#C93A3A;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px;}
+  .hint{color:var(--muted);font-size:13.5px;margin-top:16px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- ================= СЕГОДНЯ ================= -->
+  <section class="tab active" id="tab-today">
+    <div class="streak-card">
+      <div class="streak-top">
+        <div class="flame">🔥</div>
+        <div>
+          <div class="streak-num" id="streakNum">0</div>
+          <div class="streak-cap">дней в дисциплине</div>
+        </div>
+      </div>
+      <div class="streak-msg" id="streakMsg">Закрой все задания — день засчитается</div>
+      <div class="support-line">🔥 Сегодня тебя поддержали: <span id="supportCount">0</span> раз</div>
+    </div>
+    <div class="week" id="weekRow"></div>
+    <h2>Задания дня</h2>
+    <div id="tasksBox"></div>
+  </section>
+
+  <!-- ================= РЕЙТИНГ ================= -->
+  <section class="tab" id="tab-rating">
+    <h2>Рейтинг участников</h2>
+    <p class="lead">Побеждает самая длинная серия дней подряд — как в Duolingo. Засчитывается день, когда выполнены все задания. Нажмите 🔥, чтобы поддержать участника.</p>
+    <div id="ratingBox"></div>
+  </section>
+
+  <!-- ================= ВЫЗОВЫ ================= -->
+  <section class="tab" id="tab-challenges">
+    <h2>Вызовы</h2>
+    <div id="challengesBox"></div>
+  </section>
+
+  <!-- ================= ПРОФИЛЬ ================= -->
+  <section class="tab" id="tab-profile">
+    <div class="profile-head">
+      <div class="avatar" id="pAvatar"></div>
+      <div><div class="n" id="pName">Участник</div><div class="s">Участник сообщества</div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sCur">0</b><span>текущая серия</span></div>
+      <div class="stat"><b id="sBest">0</b><span>лучшая серия</span></div>
+      <div class="stat"><b id="sTotal">0</b><span>всего дней</span></div>
+    </div>
+    <div class="freeze">
+      <div class="em">❄️</div>
+      <div><b>Заморозки: 2 из 2</b><p>Если пропустите день, заморозка сработает сама и сохранит серию. Обновляются каждый месяц.</p></div>
+    </div>
+    <h2>Достижения · <span id="achCount">1 из 11</span></h2>
+    <div class="ach-grid" id="achGrid"></div>
+    <h2>Последние 5 недель</h2>
+    <div class="cal" id="calBox"></div>
+    <h2>Настройки</h2>
+    <div class="settings" id="settingsBox"></div>
+    <button class="danger" id="resetBtn">Сбросить весь прогресс</button>
+    <p class="hint">Если напоминания не приходят, откройте чат с ботом и нажмите /start.</p>
+  </section>
+</div>
+
+<nav>
+  <button class="active" data-tab="tab-today"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 12l2 2 4-4"/></svg>Сегодня</button>
+  <button data-tab="tab-rating"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3a1 1 0 0 1 1 1c0 2.5-2 4-4 4M7 5H4a1 1 0 0 0-1 1c0 2.5 2 4 4 4"/></svg>Рейтинг</button>
+  <button data-tab="tab-challenges"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>Вызовы</button>
+  <button data-tab="tab-profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-5.5 8-5.5s6.5 1.5 8 5.5"/></svg>Профиль</button>
+</nav>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+try{ if(tg){ tg.expand(); } }catch(e){}
+
+const TODAY_STR = new Date().toISOString().slice(0,10);
+const DEFAULT = {
+  streak:0, best:0, total:0, done:{}, supports:0,
+  tasks:[
+    {name:'Утренняя зарядка', done:false},
+    {name:'2 литра воды в день', done:false},
+    {name:'Чтение', done:false},
+    {name:'Холодный душ (закалка)', done:false},
+    {name:'Тренировка/активность/10 тыс шагов', done:false},
+    {name:'Настроение: отметить, как прошёл день 🙂', done:false}
+  ],
+  taskDate:TODAY_STR,
+  doneDays:{}, supportsSent:{},
+  settings:{morning:true, morningTime:'08:00', evening:true, eveningTime:'20:00', water:true, anon:false}
+};
+let S = load();
+function load(){
+  try{
+    const raw = localStorage.getItem('lifeTrackerV2');
+    if(!raw) return JSON.parse(JSON.stringify(DEFAULT));
+    const s = JSON.parse(raw);
+    if(s.taskDate !== TODAY_STR){ s.taskDate = TODAY_STR; s.tasks.forEach(t=>t.done=false); }
+    s.tasks = s.tasks && s.tasks.length ? s.tasks : DEFAULT.tasks;
+    s.settings = Object.assign({}, DEFAULT.settings, s.settings||{});
+    s.streak = 0; s.best = 0; s.total = 0; s.done = {}; s.supports = 0; s.doneDays = {}; s.supportsSent = {};
+    return s;
+  }catch(e){ return JSON.parse(JSON.stringify(DEFAULT)); }
+}
+function save(){ try{ localStorage.setItem('lifeTrackerV2', JSON.stringify(S)); }catch(e){} renderAll(); }
+
+/* -------- вкладки -------- */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById(b.dataset.tab).classList.add('active');
+    window.scrollTo(0,0);
+  });
+});
+
+/* -------- профиль -------- */
+let name='Участник', photo='';
+try{
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if(u){ name = u.first_name || u.username || 'Участник'; photo = u.photo_url || ''; }
+}catch(e){}
+document.getElementById('pName').textContent = name;
+const pA = document.getElementById('pAvatar'), rA = photo;
+if(rA){ pA.innerHTML = '<img src="'+rA+'" style="width:100%;height:100%;object-fit:cover">'; }
+else { pA.textContent = name.trim().charAt(0).toUpperCase() || 'У'; }
+
+/* -------- задания: рендер с кнопками добавить/удалить -------- */
+function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+function renderTasks(){
+  const box = document.getElementById('tasksBox');
+  box.innerHTML = '';
+  S.tasks.forEach((t, i)=>{
+    const row = document.createElement('div');
+    row.className = 'task' + (t.done ? ' done' : '');
+    row.innerHTML =
+      '<div class="check">'+(t.done?'✓':'')+'</div>'+
+      '<div class="name">'+esc(t.name)+'</div>'+
+      '<div class="bell">🔔</div>';
+    row.querySelector('.check').addEventListener('click', ()=>toggleTask(i));
+    box.appendChild(row);
+
+    const ctrl = document.createElement('div');
+    ctrl.className = 'row-controls';
+    ctrl.innerHTML =
+      '<span class="lbl">Между заданиями:</span>'+
+      '<button class="btn-mini add">＋ Добавить</button>'+
+      '<button class="btn-mini del">🗑 Удалить</button>';
+    ctrl.querySelector('.add').addEventListener('click', ()=>addTaskAt(i+1));
+    ctrl.querySelector('.del').addEventListener('click', ()=>delTask(i));
+    box.appendChild(ctrl);
+  });
+}
+function toggleTask(i){
+  S.tasks[i].done = !S.tasks[i].done;
+  if(S.tasks.every(t=>t.done) && !S.doneDays[TODAY_STR]){
+    S.doneDays[TODAY_STR] = true;
+    S.total++; S.streak++; S.best = Math.max(S.best, S.streak);
+  }
+  save();
+}
+function addTaskAt(pos){
+  const nm = prompt('Название нового задания:', '');
+  if(nm === null) return;
+  S.tasks.splice(pos, 0, {name: nm.trim() || 'Новое задание', done:false});
+  save();
+}
+function delTask(i){
+  if(S.tasks.length <= 1){ alert('Должно остаться хотя бы одно задание'); return; }
+  if(!confirm('Удалить задание «'+S.tasks[i].name+'»?')) return;
+  S.tasks.splice(i,1); save();
+}
+
+/* -------- неделя -------- */
+function renderWeek(){
+  const days=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+  const row = document.getElementById('weekRow'); row.innerHTML='';
+  const arr=[];
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); arr.push(d); }
+  arr.forEach((d,idx)=>{
+    const key = d.toISOString().slice(0,10);
+    const el=document.createElement('div');
+    el.className='day'+(S.doneDays[key]?' done':'')+(idx===6?' today':'');
+    el.innerHTML='<div class="dot"></div><span>'+(idx===6?'Сегодня':days[d.getDay()])+'</span>';
+    row.appendChild(el);
+  });
+}
+
+/* -------- рейтинг (демо) -------- */
+const RATING = [
+  {name:'Nik', days:10, streak:2, sup:2},
+  {name:'Елена', days:10, streak:1, sup:1},
+  {name:'ARTEM', days:10, streak:0, sup:0},
+  {name:'Dmitry Caplyar', days:9, streak:1, sup:1},
+  {name:'Жанна', days:9, streak:1, sup:1},
+  {name:'Vita', days:8, streak:1, sup:1}
+];
+function renderRating(){
+  const box=document.getElementById('ratingBox'); box.innerHTML='';
+  const list=[{name, days:S.total, streak:S.streak, sup:S.supports, me:true}, ...RATING]
+    .sort((a,b)=> b.streak-a.streak || b.days-a.days);
+  list.forEach((u,i)=>{
+    const row=document.createElement('div'); row.className='user-row';
+    const medal = i===0 ? '🥇' : i===1 ? '🥇' : i===2 ? '🥇' : String(i+1);
+    const av = u.me && photo ? '<img src="'+photo+'" style="width:100%;height:100%;object-fit:cover">' : esc(u.name.charAt(0));
+    row.innerHTML =
+      '<div class="rank'+(i<3?' medal':'')+'">'+medal+'</div>'+
+      '<div class="avatar">'+av+'</div>'+
+      '<div class="u-info"><div class="u-name">'+esc(u.name)+'</div>'+
+      '<div class="u-sub">всего '+u.days+' дн.'+(u.sup?' · 🔥 '+u.sup:'')+'</div></div>'+
+      '<div class="u-streak">🔥 '+u.streak+'</div>'+
+      '<button class="sup-btn">🔥</button>';
+    row.querySelector('.sup-btn').addEventListener('click', ()=>{
+      if(u.me){ S.supports++; } else { u.sup=(u.sup||0)+1; }
+      save();
+    });
+    box.appendChild(row);
+  });
+}
+
+/* -------- вызовы -------- */
+function renderChallenges(){
+  const box=document.getElementById('challengesBox'); box.innerHTML='';
+  const chals=[
+    {em:'🌱', t:'Первые 7 дней', badge:S.streak>=7?'Пройден':'В процессе', cur:Math.min(S.streak,7), max:7, sub:'Закрыть 7 дней подряд'},
+    {em:'💧', t:'Водный баланс', badge:S.tasks[1]&&S.tasks[1].done?'Сегодня да':'Сегодня нет', cur:S.tasks.filter(t=>t.done&&t.name.indexOf('воды')>-1).length, max:1, sub:'Отметь «2 литра воды» сегодня'},
+    {em:'⚡', t:'Полная неделя', badge:S.total>=7?'Пройден':'В процессе', cur:Math.min(S.total,7), max:7, sub:'7 закрытых дней (не обязательно подряд)'},
+    {em:'🏆', t:'Месяц силы', badge:'В процессе', cur:Math.min(S.total,30), max:30, sub:'30 закрытых дней за месяц'}
+  ];
+  chals.forEach(c=>{
+    const el=document.createElement('div'); el.className='chal';
+    const pct=Math.round(c.cur/c.max*100);
+    el.innerHTML='<div class="chal-top"><div class="em">'+c.em+'</div><div class="t">'+c.t+'</div><div class="badge">'+c.badge+'</div></div>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="chal-sub">'+c.sub+' · '+c.cur+' из '+c.max+'</div>';
+    box.appendChild(el);
+  });
+}
+
+/* -------- достижения -------- */
+const ACH=[
+  {em:'🌱', t:'Первый шаг', s:'Закрыть первый день', f:()=>S.total>=1},
+  {em:'⚡', t:'Разгон', s:'Серия 3 дня подряд', f:()=>S.best>=3},
+  {em:'🔥', t:'Неделя дисциплины', s:'Серия 7 дней подряд', f:()=>S.best>=7},
+  {em:'💪', t:'Две недели', s:'Серия 14 дней подряд', f:()=>S.best>=14},
+  {em:'🏅', t:'Месяц силы', s:'Серия 30 дней подряд', f:()=>S.best>=30},
+  {em:'💎', t:'Полсотни', s:'Серия 50 дней подряд', f:()=>S.best>=50},
+  {em:'👑', t:'Легенда', s:'Серия 100 дней подряд', f:()=>S.best>=100},
+  {em:'📅', t:'30 дней в деле', s:'30 закрытых дней (не обязательно подряд)', f:()=>S.total>=30},
+  {em:'🎯', t:'Вызов принят', s:'Пройти первый вызов до конца', f:()=>false},
+  {em:'🏆', t:'Охотник за вызовами', s:'Пройти 5 вызовов до конца', f:()=>false},
+  {em:'🤝', t:'Опора сообщества', s:'Поддержать участников 10 раз', f:()=>S.supportsSentCount>=10}
+];
+function renderAch(){
+  const grid=document.getElementById('achGrid'); grid.innerHTML='';
+  let got=0;
+  ACH.forEach(a=>{
+    const ok=a.f(); if(ok) got++;
+    const el=document.createElement('div'); el.className='ach'+(ok?' got':'');
+    el.innerHTML='<span class="em">'+a.em+'</span><b>'+a.t+'</b><span>'+a.s+'</span>';
+    grid.appendChild(el);
+  });
+  document.getElementById('achCount').textContent = got+' из '+ACH.length;
+}
+
+/* -------- календарь 5 недель -------- */
+function renderCal(){
+  const box=document.getElementById('calBox');
+  const hd=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  let html='<div class="cal-head">'+hd.map(d=>'<div>'+d+'</div>').join('')+'</div><div class="cal-grid">';
+  const now=new Date();
+  const end=new Date(now); end.setDate(end.getDate()+ (7-((end.getDay()+6)%7)) );
+  const cells=[];
+  for(let i=34;i>=0;i--){ const d=new Date(end); d.setDate(d.getDate()-i); cells.push(d); }
+  cells.forEach(d=>{
+    const key=d.toISOString().slice(0,10);
+    const cls='cal-cell'+(S.doneDays[key]?' done':'')+(key===TODAY_STR?' today':'');
+    html+='<div class="'+cls+'">'+d.getDate()+'</div>';
+  });
+  html+='</div>';
+  box.innerHTML=html;
+}
+
+/* -------- настройки -------- */
+function renderSettings(){
+  const box=document.getElementById('settingsBox'); box.innerHTML='';
+  const st=S.settings;
+  function rowToggle(title, sub, key){
+    const r=document.createElement('div'); r.className='set-row';
+    r.innerHTML='<div class="set-info"><b>'+title+'</b><span>'+sub+'</span></div><div class="toggle'+(st[key]?' on':'')+'"></div>';
+    r.querySelector('.toggle').addEventListener('click', ()=>{ st[key]=!st[key]; save(); });
+    box.appendChild(r);
+  }
+  function rowTime(title, sub, key){
+    const r=document.createElement('div'); r.className='set-row';
+    r.innerHTML='<div class="set-info"><b>'+title+'</b><span>'+sub+'</span></div><input type="time" class="time-pick" value="'+st[key]+'">';
+    r.querySelector('input').addEventListener('change', e=>{ st[key]=e.target.value; save(); });
+    box.appendChild(r);
+  }
+  rowToggle('Утреннее сообщение','Серия и задания на день','morning');
+  rowTime('Время утром','По вашему часовому поясу','morningTime');
+  rowToggle('Вечернее напоминание','Придёт, если день ещё не закрыт','evening');
+  rowTime('Время вечером','По вашему часовому поясу','eveningTime');
+  rowToggle('ПЕЙ ВОДУ! 💧','Напоминание пить воду в 10:00 и 15:00','water');
+  rowToggle('Скрыть имя в рейтинге','Вы будете показаны как «Аноним»','anon');
+}
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('Обнулить весь прогресс? Серия, дни и выполненные задания сотрутся.')) return;
+  localStorage.removeItem('lifeTrackerV2');
+  S = JSON.parse(JSON.stringify(DEFAULT)); save();
+});
+
+function renderAll(){
+  document.getElementById('streakNum').textContent = S.streak;
+  document.getElementById('supportCount').textContent = S.supports;
+  document.getElementById('streakMsg').textContent =
+    S.tasks.every(t=>t.done) ? 'День засчитан — так держать!' : 'Закрой все задания — день засчитается';
+  document.getElementById('sCur').textContent=S.streak;
+  document.getElementById('sBest').textContent=S.best;
+  document.getElementById('sTotal').textContent=S.total;
+  document.getElementById('pAvatar').textContent = photo?'':(name.trim().charAt(0).toUpperCase()||'У');
+  renderTasks(); renderWeek(); renderRating(); renderChallenges(); renderAch(); renderCal(); renderSettings();
+}
+renderAll();
+</script>
+</body>
+</html>
