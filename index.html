@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🌻 Трекер LIFE</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:linear-gradient(160deg,#FFF9E6,#FFF3C4); color:#3E2C00; min-height:100vh; padding-bottom:86px; }
+  .wrap { max-width:520px; margin:0 auto; padding:16px; }
+  h1 { font-size:24px; margin-bottom:2px; }
+  .sub { color:#8a6d1a; font-size:13px; margin-bottom:14px; }
+  .card { background:#fff; border-radius:18px; padding:16px; margin-bottom:14px; box-shadow:0 4px 14px rgba(180,140,0,.10); }
+  .streak-row { display:flex; align-items:center; gap:12px; }
+  .fire { font-size:34px; }
+  .streak-num { font-size:30px; font-weight:800; }
+  .streak-word { color:#8a6d1a; font-size:13px; }
+  .xp-row { margin-top:12px; }
+  .xp-head { display:flex; justify-content:space-between; font-size:13px; font-weight:700; }
+  .xp-bar-bg { height:10px; background:#FFF3C4; border-radius:6px; margin:6px 0 4px; overflow:hidden; }
+  .xp-bar { height:100%; width:0; background:linear-gradient(90deg,#FFC107,#FF8F00); border-radius:6px; transition:width .5s; }
+  .xp-next { font-size:12px; color:#8a6d1a; }
+  .sec-title { font-size:13px; font-weight:800; letter-spacing:.06em; color:#a37c00; margin:0 0 10px; text-transform:uppercase; }
+  .task { display:flex; align-items:center; gap:10px; background:#FFFBEF; border:1.5px solid #F5E1A0; border-radius:12px; padding:11px 13px; margin-bottom:8px; cursor:pointer; transition:.2s; }
+  .task.done { opacity:.55; }
+  .task.done .txt { text-decoration:line-through; }
+  .check { width:24px; height:24px; min-width:24px; border-radius:8px; border:2px solid #FFB300; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; background:transparent; }
+  .task.done .check { background:#FFB300; }
+  .add-row { display:flex; gap:8px; margin-top:10px; }
+  .add-row input { flex:1; border:1.5px solid #F5E1A0; border-radius:12px; padding:11px 13px; font-size:15px; background:#FFFBEF; outline:none; }
+  .btn { background:linear-gradient(135deg,#FFC107,#FF8F00); color:#fff; border:none; border-radius:12px; padding:11px 18px; font-size:15px; font-weight:700; cursor:pointer; }
+  .btn.small { padding:8px 14px; font-size:13px; }
+  .day-progress { text-align:center; margin-top:10px; font-weight:700; color:#a37c00; }
+  .freeze-box { background:linear-gradient(135deg,#E3F2FD,#BBDEFB); border-radius:18px; padding:14px 16px; margin-bottom:14px; display:none; }
+  .freeze-box .fb-t { font-weight:800; margin-bottom:4px; }
+  .freeze-box .fb-d { font-size:13px; color:#3949ab; margin-bottom:10px; }
+  .week-strip { display:flex; gap:6px; }
+  .wd { flex:1; text-align:center; background:#FFFBEF; border-radius:10px; padding:8px 2px; }
+  .wd.closed { background:#FFD54F; }
+  .wd.today { outline:2px solid #FF8F00; }
+  .wd-l { font-size:11px; color:#8a6d1a; }
+  .wd-d { font-size:11px; font-weight:700; margin-top:3px; }
+  .phrase { text-align:center; font-style:italic; color:#8a6d1a; font-size:13.5px; line-height:1.5; }
+  .race-cols { display:flex; gap:14px; align-items:flex-end; height:120px; padding:0 8px; }
+  .race-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+  .race-bar { width:46px; background:linear-gradient(180deg,#FFC107,#FF8F00); border-radius:10px 10px 4px 4px; min-height:6px; transition:height .5s; }
+  .race-val { font-weight:800; font-size:20px; margin-bottom:4px; }
+  .race-l { font-size:12px; color:#8a6d1a; margin-top:6px; }
+  .race-msg { text-align:center; margin-top:12px; font-weight:700; color:#a37c00; }
+  .week-bars { display:flex; gap:8px; height:110px; align-items:flex-end; padding:0 4px; margin-top:14px; }
+  .wbar { flex:1; display:flex; flex-direction:column; justify-content:flex-end; height:100%; text-align:center; }
+  .wb-fill { background:#FFD54F; border-radius:8px 8px 2px 2px; min-height:4px; }
+  .wb-l { font-size:11px; color:#8a6d1a; margin-top:4px; }
+  .boss-card { background:#FFFBEF; border:1.5px solid #F5E1A0; border-radius:16px; padding:14px; margin-bottom:12px; }
+  .boss-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .boss-name { font-weight:800; }
+  .boss-xp { font-size:12px; font-weight:700; color:#a37c00; }
+  .boss-bar { height:10px; background:#FFF3C4; border-radius:6px; overflow:hidden; }
+  .boss-fill { height:100%; background:linear-gradient(90deg,#FF8F00,#FF5252); border-radius:6px; transition:width .5s; }
+  .boss-info { font-size:12.5px; color:#8a6d1a; margin:8px 0 10px; }
+  .mood-picker { display:flex; justify-content:space-between; gap:8px; }
+  .mood-btn { font-size:30px; background:#FFFBEF; border:2px solid #F5E1A0; border-radius:14px; padding:10px 0; width:100%; cursor:pointer; transition:.2s; }
+  .mood-btn.active { background:#FFD54F; border-color:#FF8F00; transform:scale(1.08); }
+  .mood-history { display:flex; gap:6px; margin-top:14px; }
+  .mh-cell { flex:1; text-align:center; background:#FFFBEF; border-radius:10px; padding:8px 2px; }
+  .mh-emoji { font-size:20px; }
+  .mh-l { font-size:11px; color:#8a6d1a; margin-top:3px; }
+  .stat-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #FFF3C4; font-size:14.5px; }
+  .stat-row b { font-size:15px; }
+  .year-ring { display:grid; grid-template-columns:repeat(14,1fr); gap:4px; margin-top:12px; }
+  .ring-cell { aspect-ratio:1; border-radius:4px; background:#FFF3C4; }
+  .ring-cell.partial { background:#FFE082; }
+  .ring-cell.closed { background:#FFB300; }
+  .ring-cell.frozen { background:#90CAF9; }
+  .set-label { font-size:13px; font-weight:700; color:#a37c00; margin:12px 0 6px; }
+  .set-label:first-child { margin-top:0; }
+  .set-input { width:100%; border:1.5px solid #F5E1A0; border-radius:12px; padding:10px 12px; font-size:14px; background:#FFFBEF; outline:none; font-family:inherit; }
+  .growth { font-weight:700; margin-top:10px; }
+  nav { position:fixed; bottom:0; left:0; right:0; background:#fff; box-shadow:0 -4px 18px rgba(180,140,0,.14); display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); }
+  nav button { flex:1; background:none; border:none; font-size:11px; font-weight:700; color:#a8925c; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  nav button span.ic { font-size:20px; }
+  nav button.active { color:#FF8F00; }
+  .modal { position:fixed; inset:0; background:rgba(62,44,0,.5); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .modal .m-card { background:#fff; border-radius:20px; padding:22px; max-width:340px; width:100%; text-align:center; }
+  .m-card h3 { margin-bottom:10px; }
+  .m-card p { font-size:14.5px; color:#6b5310; margin-bottom:14px; line-height:1.5; }
+  .confetti { position:fixed; top:-16px; width:10px; height:14px; z-index:100; border-radius:2px; animation:fall 2.4s linear forwards; pointer-events:none; }
+  @keyframes fall { to { transform:translateY(105vh) rotate(540deg); opacity:.7; } }
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:#3E2C00; color:#fff; padding:11px 18px; border-radius:14px; font-size:14px; opacity:0; transition:.3s; z-index:60; max-width:86%; text-align:center; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  /* страховка от чужих плашек */
+  iframe[src*="netlify"], [id^="netlify"], [class*="netlify-badge"] { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="tab-habits">
+    <h1>🌻 Трекер LIFE</h1>
+    <div class="sub" id="morning-msg"></div>
+    <div class="card">
+      <div class="streak-row">
+        <span class="fire" id="streak-fire">⭐</span>
+        <div>
+          <div class="streak-num" id="streak-num">0</div>
+          <div class="streak-word" id="streak-word">дней в дисциплине</div>
+        </div>
+      </div>
+      <div class="xp-row">
+        <div class="xp-head"><span id="xp-title">Стажёр 🌱</span><span id="xp-num">0 XP</span></div>
+        <div class="xp-bar-bg"><div class="xp-bar" id="xp-bar"></div></div>
+        <div class="xp-next" id="xp-next"></div>
+      </div>
+    </div>
+    <div class="freeze-box" id="freeze-box">
+      <div class="fb-t">❄️ Вчерашний день не закрыт</div>
+      <div class="fb-d">Заморозь его раз в неделю — серия не пострадает. Бесплатно.</div>
+      <button class="btn small" onclick="doFreeze()">Заморозить ❄️</button>
+    </div>
+    <div class="card">
+      <p class="sec-title">Задачи дня</p>
+      <ul id="task-list" style="list-style:none"></ul>
+      <div class="add-row">
+        <input id="new-task" placeholder="Новая задача..." onkeydown="if(event.key==='Enter')addTask()">
+        <button class="btn" onclick="addTask()">+</button>
+      </div>
+      <div class="day-progress" id="day-progress">0 / 0</div>
+    </div>
+    <div class="card">
+      <p class="sec-title">Неделя</p>
+      <div class="week-strip" id="week-strip"></div>
+    </div>
+    <div class="card"><p class="phrase" id="phrase-day"></p></div>
+    <div style="text-align:center;margin:4px 0 14px;"><button class="btn small" onclick="showSummary()">Итоги дня</button></div>
+  </div>
+
+  <div id="tab-rating" style="display:none">
+    <h1>🏆 Рейтинг</h1>
+    <div class="sub">Ты против себя вчерашней. Каждое очко — закрытая задача.</div>
+    <div class="card">
+      <div class="race-cols">
+        <div class="race-col"><div class="race-val" id="r-y-val">0</div><div class="race-bar" style="height:30%"></div><div class="race-l">вчера</div></div>
+        <div class="race-col"><div class="race-val" id="r-t-val">0</div><div class="race-bar" style="height:20%"></div><div class="race-l">сегодня</div></div>
+      </div>
+      <div class="race-msg" id="race-msg"></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">Последние 7 дней</p>
+      <div class="week-bars" id="week-bars"></div>
+    </div>
+  </div>
+
+  <div id="tab-quests" style="display:none">
+    <h1>⚡ Вызовы</h1>
+    <div class="sub">Боссы дисциплины. Прогресс = закрытые дни (не обязательно подряд).</div>
+    <div id="boss-list"></div>
+  </div>
+
+  <div id="tab-mood" style="display:none">
+    <h1>💛 Настроение</h1>
+    <div class="sub">Как ты сегодня?</div>
+    <div class="card">
+      <div class="mood-picker" id="mood-picker"></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">История недели</p>
+      <div class="mood-history" id="mood-history"></div>
+    </div>
+  </div>
+
+  <div id="tab-profile" style="display:none">
+    <h1>🙂 Профиль</h1>
+    <div class="sub" id="p-title">Стажёр 🌱</div>
+    <div class="card">
+      <div class="stat-row"><span>Всего закрытых дней</span><b id="p-days">0</b></div>
+      <div class="stat-row"><span>Всего выполнено задач</span><b id="p-tasks">0</b></div>
+      <div class="stat-row"><span>Лучший стрик</span><b id="p-streak">0</b></div>
+      <div class="stat-row"><span>Опыт</span><b id="p-xp">0 XP</b></div>
+      <div class="growth" id="p-growth"></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">Кольцо года</p>
+      <div class="year-ring" id="year-ring"></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">Настройки</p>
+      <div class="set-label">Утреннее сообщение</div>
+      <input class="set-input" id="set-morning">
+      <div class="set-label">Вечернее напоминание</div>
+      <input class="set-input" id="set-evening">
+      <div class="set-label">Личное послание себе (показывается, если день провален)</div>
+      <input class="set-input" id="set-personal">
+      <div style="margin-top:14px;"><button class="btn" onclick="saveSettings()">Сохранить</button></div>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <button id="btn-habits" class="active" onclick="showTab('habits')"><span class="ic">☀️</span>Привычки</button>
+  <button id="btn-rating" onclick="showTab('rating')"><span class="ic">🏆</span>Рейтинг</button>
+  <button id="btn-quests" onclick="showTab('quests')"><span class="ic">⚡</span>Вызовы</button>
+  <button id="btn-mood" onclick="showTab('mood')"><span class="ic">💛</span>Настроение</button>
+  <button id="btn-profile" onclick="showTab('profile')"><span class="ic">🙂</span>Профиль</button>
+</nav>
+
+<div class="modal" id="summary-modal">
+  <div class="m-card">
+    <h3>🎉 День закрыт!</h3>
+    <p>Задачи: <b id="sum-tasks"></b><br>Серия: <b id="sum-streak"></b><br>Титул: <b id="sum-title"></b></p>
+    <p id="sum-xp"></p>
+    <button class="btn" onclick="closeSummary()">Отлично!</button>
+  </div>
+</div>
+
+<div class="modal" id="personal-modal">
+  <div class="m-card">
+    <h3>💛 Никаких самобичеваний</h3>
+    <p id="pm-text"></p>
+    <button class="btn" onclick="closePersonal()">Продолжаю</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
