@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Трекер LIFE</title>
+<style>
+:root{--y:#FFD400;--y2:#FFEB99;--bg:#F5F5F7;--ink:#111;--mut:#888;--card:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;}
+body{background:var(--bg);color:var(--ink);padding-bottom:90px;}
+.wrap{max-width:560px;margin:0 auto;padding:14px;}
+.err{background:#ffdddd;color:#a00;padding:10px;border-radius:10px;margin-bottom:10px;font-size:13px;display:none;white-space:pre-wrap;}
+.head{background:var(--y);border-radius:0 0 22px 22px;padding:20px 18px 14px;}
+.head h1{font-size:24px;font-weight:800;}
+.ver{display:inline-block;background:rgba(0,0,0,.15);border-radius:8px;padding:3px 10px;font-size:13px;font-weight:700;margin-top:6px;}
+.pills{display:flex;gap:6px;overflow-x:auto;padding:12px 0 2px;}
+.pill{background:#e9e9ec;border:none;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:700;white-space:nowrap;color:#333;cursor:pointer;}
+.pill.on{background:#111;color:#fff;}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-top:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.pcard{display:flex;align-items:center;gap:12px;}
+.avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#ddd;}
+.avafall{width:56px;height:56px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.pname{font-size:18px;font-weight:800;}
+.psub{font-size:13px;color:var(--mut);}
+.lbl{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--mut);margin:14px 0 6px;}
+.bar{height:10px;background:#eee;border-radius:6px;overflow:hidden;}
+.bar i{display:block;height:100%;background:var(--y);border-radius:6px;transition:width .3s;}
+.hrow{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid #f0f0f0;}
+.hrow.done .hname{text-decoration:line-through;color:#aaa;}
+.hname{flex:1;font-weight:600;}
+.chk{width:30px;height:30px;border-radius:50%;border:2px solid #ccc;background:#fff;cursor:pointer;font-size:15px;line-height:1;}
+.chk.done{background:var(--y);border-color:var(--y);}
+.del{background:none;border:none;font-size:16px;color:#bbb;cursor:pointer;padding:6px;}
+.btn{width:100%;background:#111;color:var(--y);border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;margin-top:12px;}
+.btn2{background:var(--y);color:#111;width:100%;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;margin-top:10px;}
+input[type=text]{width:100%;border:1px solid #ddd;border-radius:12px;padding:12px;font-size:15px;margin-top:8px;}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:8px;}
+.cd{aspect-ratio:1;border-radius:9px;background:#f0f0f2;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;}
+.cd.full{background:var(--y);color:#111;font-weight:700;}
+.cd.part{background:var(--y2);color:#776;}
+.cd.frozen{background:#bfe0ff;color:#256;}
+.cd.m1{background:#ffd6d6;}.cd.m2{background:#ffe3bd;}.cd.m3{background:#fff3a8;}.cd.m4{background:#d4f5c8;}.cd.m5{background:#9be89b;}
+.caldow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;font-size:10px;color:var(--mut);text-align:center;margin-top:8px;}
+.rrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;}
+.medal{font-size:22px;width:26px;text-align:center;}
+.firebtn{background:var(--y);border:none;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;}
+.firebtn:disabled{background:#eee;color:#aaa;}
+.firecnt{font-size:13px;font-weight:700;margin-left:6px;}
+.allseen{background:#eaffea;color:#1a7a1a;font-size:12px;font-weight:700;border-radius:8px;padding:4px 10px;display:inline-block;margin-top:6px;}
+.ach{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #f0f0f0;}
+.ach .ic{font-size:26px;filter:grayscale(1);opacity:.35;}
+.ach.got .ic{filter:none;opacity:1;}
+.ach .an{font-weight:700;font-size:14px;}
+.ach .ad{font-size:12px;color:var(--mut);}
+.ach .st{margin-left:auto;font-size:16px;}
+.setrow{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #f0f0f0;}
+.sw{position:relative;width:50px;height:28px;background:#ddd;border-radius:999px;transition:.2s;cursor:pointer;border:none;}
+.sw.on{background:var(--y);}
+.sw:after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.2s;}
+.sw.on:after{left:25px;}
+.moji{font-size:34px;background:none;border:none;cursor:pointer;padding:6px;filter:grayscale(1);}
+.moji.on{filter:none;transform:scale(1.2);}
+.note{width:100%;border:1px solid #ddd;border-radius:12px;padding:12px;font-size:14px;margin-top:10px;min-height:60px;}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #eee;z-index:9;}
+.tab{flex:1;background:none;border:none;padding:8px 2px 12px;font-size:11px;color:#888;cursor:pointer;font-weight:600;}
+.tab.on{color:#111;}
+.tab .ti{font-size:20px;display:block;}
+.motiv{background:var(--y2);border-radius:10px;padding:10px;font-size:13px;margin-top:10px;display:none;}
+.nopart{color:var(--mut);font-size:13px;text-align:center;padding:14px 0;}
+.chrow{padding:12px 0;border-bottom:1px solid #f0f0f0;}
+.chrow h3{font-size:16px;font-weight:800;}
+.chmeta{font-size:12px;color:var(--mut);margin:4px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="err" id="errbox"></div>
+  <div class="head"><h1>🔥 Трекер LIFE</h1><span class="ver">Версия 19</span></div>
+  <div class="pills" id="pills"></div>
+  <div id="view"></div>
+</div>
+<div class="tabs" id="tabs"></div>
+<script>
+function safe(fn){try{fn();}catch(e){var b=document.getElementById('errbox');b.style.display='block';b.textContent='Ошибка: '+e.message;}}
+function tgU(){try{var t=window.Telegram&&window.Telegram.WebApp;if(t&&t.initDataUnsafe&&t.initDataUnsafe.user)return t.initDataUnsafe.user;}catch(e){}return null;}
+var U=tgU();
+var ME={id:(U&&U.id)?String(U.id):'guest',name:'',photo:''};
+if(U){ME.name=(U.first_name||'')+(U.last_name?' '+U.last_name:'');ME.photo=U.photo_url||'';}
+if(!ME.name&&U&&U.username)ME.name='@'+U.username;
+if(!ME.name)ME.name='Гость';
+if(window.Telegram&&window.Telegram.WebApp){try{Telegram.WebApp.expand();}catch(e){}}
+var TABS=[['habits','✅','Привычки'],['rating','🏆','Рейтинг'],['challenges','⚡','Вызовы'],['mood','🙂','Настроение'],['profile','👤','Профиль']];
+var tab='habits';
+var S=load();
+function load(){try{var r=localStorage.getItem('lt19_'+ME.id);if(r)return JSON.parse(r);}catch(e){}return {habits:[],done:{},days:{},frozen:{},challs:[],mood:{},gave:{},gotFire:0,settings:{morning:true,water1:true,water2:true,evening:true,hideName:false},freezes:2};}
+function save(){try{localStorage.setItem('lt19_'+ME.id,JSON.stringify(S));}catch(e){}}
+function dkey(d){var y=d.getFullYear(),m=d.getMonth()+1,dd=d.getDate();return y+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
+function today(){return dkey(new Date());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function doneCount(ds){var c=0;for(var i=0;i<S.habits.length;i++){if(S.done[ds]&&S.done[ds][S.habits[i].id])c++;}return c;}
+function dayClosed(ds){return S.habits.length>0&&doneCount(ds)===S.habits.length;}
+function closedDays(){var c=0;for(var k in S.days)if(S.days[k])c++;return c;}
+function curStreak(){var n=0,d=new Date();if(S.habits.length&&!dayClosed(dkey(d))&&!S.frozen[dkey(d)])d=addDays(d,-1);while(true){var k=dkey(d);if(S.days[k]||S.frozen[k]){n++;d=addDays(d,-1);}else break;}return n;}
+function bestStreak(){var best=0,run=0,d=new Date();d=addDays(d,-400);for(var i=0;i<420;i++){var k=dkey(d);if(S.days[k]||S.frozen[k]){run++;if(run>best)best=run;}else run=0;d=addDays(d,1);}return best;}
+function chDone(){return S.challs.filter(function(c){return c.done>=c.days;}).length;}
+function gaveCount(){var c=0;for(var k in S.gave)c+=S.gave[k].length;return c;}
+var ACH=[
+ {ic:'👣',n:'Первый шаг',d:'Закрыт первый день',ok:function(){return closedDays()>=1;}},
+ {ic:'🚀',n:'Разгон',d:'Серия из 3 дней подряд',ok:function(){return curStreak()>=3||bestStreak()>=3;}},
+ {ic:'📅',n:'Неделя дисциплины',d:'Серия из 7 дней подряд',ok:function(){return curStreak()>=7||bestStreak()>=7;}},
+ {ic:'🌗',n:'Две недели',d:'Серия из 14 дней подряд',ok:function(){return curStreak()>=14||bestStreak()>=14;}},
+ {ic:'💪',n:'Месяц силы',d:'Серия из 30 дней подряд',ok:function(){return curStreak()>=30||bestStreak()>=30;}},
+ {ic:'🏅',n:'Полсотни',d:'Серия из 50 дней подряд',ok:function(){return curStreak()>=50||bestStreak()>=50;}},
+ {ic:'👑',n:'Легенда',d:'Серия из 100 дней подряд',ok:function(){return curStreak()>=100||bestStreak()>=100;}},
+ {ic:'🗓',n:'30 дней в деле',d:'30 закрытых дней (не обязательно подряд)',ok:function(){return closedDays()>=30;}},
+ {ic:'🎯',n:'Вызов принят',d:'Пройти один вызов до конца',ok:function(){return chDone()>=1;}},
+ {ic:'🏹',n:'Охотник за вызовами',d:'Пройти 5 вызовов до конца',ok:function(){return chDone()>=5;}},
+ {ic:'🤝',n:'Опора сообщества',d:'Поддержать участников 10 раз',ok:function(){return gaveCount()>=10;}}
+];
+var MOTIV=['Ещё один шаг к цели! 🔥','Так держать! 💪','Ты сильнее, чем думаешь! ⚡','Отличный ритм! 🌟','Дисциплина — твой суперксил! 🏆','Продолжаем! 🔥'];
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function profileCard(sub){
+ var av=ME.photo?'<img class="avatar" src="'+esc(ME.photo)+'" onerror="this.style.display=\'none\'">':'<div class="avafall">👤</div>';
+ return '<div class="card pcard">'+av+'<div><div class="pname">'+esc(S.settings.hideName?'Скрытый участник':ME.name)+'</div><div class="psub">'+esc(sub)+'</div></div></div>';
+}
+function calendarHTML(fillFn){
+ var h='<div class="caldow"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="cal">';
+ var d=new Date();d.setDate(d.getDate()-d.getDay()+1);d=addDays(d,-28);
+ for(var i=0;i<35;i++){var cls=fillFn(dkey(d));h+='<div class="cd '+cls+'">'+d.getDate()+'</div>';d=addDays(d,1);}
+ return h+'</div>';
+}
+function habCalendar(){
+ return calendarHTML(function(k){if(S.frozen[k])return 'frozen';if(dayClosed(k))return 'full';var c=doneCount(k);return c>0?'part':'';});
+}
+function renderPills(){
+ var h='';for(var i=0;i<TABS.length;i++){h+='<button class="pill'+(tab===TABS[i][0]?' on':'')+'" onclick="go(\''+TABS[i][0]+'\')">'+TABS[i][2]+'</button>';}
+ document.getElementById('pills').innerHTML=h;
+ var t='';for(var j=0;j<TABS.length;j++){t+='<button class="tab'+(tab===TABS[j][0]?' on':'')+'" onclick="go(\''+TABS[j][0]+'\')"><span class="ti">'+TABS[j][1]+'</span>'+TABS[j][2]+'</button>';}
+ document.getElementById('tabs').innerHTML=t;
+}
+function vHabits(){
+ var tot=S.habits.length||1,pct=Math.round(100*doneCount(today())/(S.habits.length||1));
+ var h=profileCard('Серия: '+curStreak()+' · Закрыто дней: '+closedDays());
+ h+='<div class="card"><div class="lbl">ВЫПОЛНЕНО СЕГОДНЯ: '+pct+'% · ЗА 30 ДНЕЙ: '+closedDays()+' ДН.</div><div class="bar"><i style="width:'+pct+'%"></i></div>';
+ if(!S.habits.length){h+='<div class="nopart">Пока нет привычек. Добавь первую!</div>';}
+ else{for(var i=0;i<S.habits.length;i++){var hb=S.habits[i],dn=!!(S.done[today()]&&S.done[today()][hb.id]);
+  h+='<div class="hrow'+(dn?' done':'')+'"><div class="hname">'+esc(hb.name)+'</div><button class="chk'+(dn?' done':'')+'" onclick="toggleHabit(\''+hb.id+'\')">'+(dn?'✓':'')+'</button><button class="del" onclick="delHabit(\''+hb.id+'\')">✕</button></div>';}}
+ h+='<input type="text" id="newhab" placeholder="Новая привычка"><button class="btn" onclick="addHabit()">＋ Добавить привычку</button>';
+ h+='<div class="motiv" id="motiv"></div></div>';
+ h+='<div class="lbl">КАЛЕНДАРЬ · 5 НЕДЕЛЬ</div><div class="card">'+habCalendar()+'<div class="psub" style="margin-top:8px">Напоминания бота: 08:00 задания · 10:00 и 15:00 вода · 20:00 вечер</div></div>';
+ return h;
+}
+function vRating(){
+ var h=profileCard('Твоё место: 1');
+ h+='<div class="card"><div class="rrow"><span class="medal">🥇</span>'+(ME.photo?'<img class="avatar" style="width:44px;height:44px" src="'+esc(ME.photo)+'">':'<div class="avafall" style="width:44px;height:44px;font-size:20px">👤</div>')+'<div style="flex:1"><div class="pname" style="font-size:16px">'+esc(S.settings.hideName?'Скрытый участник':ME.name)+'</div><div class="psub">Пройдено дней: '+closedDays()+' · 🔥 '+S.gotFire+'</div>'+(dayClosed(today())?'<span class="allseen">✅ всё выполнено</span>':'')+'</div></div>';
+ h+='<div class="nopart">Участники, вступившие в бота, появятся здесь автоматически</div></div>';
+ h+='<div class="card psub">🔥 — поддержка участника. Можно поддержать любого один раз в день, кроме себя. Все ограничения уже встроены.</div>';
+ return h;
+}
+function vChall(){
+ var h='<div class="card"><div class="lbl">БРОСИТЬ ВЫЗОВ</div><input type="text" id="chname" placeholder="Название вызова"><input type="text" id="chdays" placeholder="Срок в днях, например 21"><button class="btn" onclick="addChall()">⚡ Бросить вызов</button></div>';
+ if(!S.challs.length)h+='<div class="card nopart">Пока нет вызовов. Брось первый!</div>';
+ for(var i=0;i<S.challs.length;i++){var c=S.challs[i],pct=Math.round(100*c.done/c.days);
+  h+='<div class="card"><div class="chrow"><h3>'+esc(c.name)+'</h3><div class="chmeta">Срок: '+c.days+' дн. · Участников: '+c.members.length+' · Выполнено: '+c.done+'/'+c.days+'</div><div class="bar"><i style="width:'+pct+'%"></i></div>';
+  if(c.members.indexOf(ME.id)<0)h+='<button class="btn2" onclick="acceptCh(\''+c.id+'\')">Принять вызов</button>';
+  else h+='<button class="btn2" onclick="markCh(\''+c.id+'\')">＋ Отметить день</button>';
+  h+='<button class="del" onclick="delCh(\''+c.id+'\')" style="float:right">✕</button></div></div>';}
+ return h;
+}
+function vMood(){
+ var keys=[],d=new Date();d=addDays(d,-34);for(var i=0;i<35;i++){keys.push(dkey(d));d=addDays(d,1);}
+ var sum=0,n=0;for(var j=0;j<keys.length;j++){if(S.mood[keys[j]]){sum+=S.mood[keys[j]].s;n++;}}
+ var pct=n?Math.round(100*sum/(n*5)):0;
+ var h='<div class="card"><div class="lbl">КАК ТЫ СЕБЯ ЧУВСТВУЕШЬ СЕГОДНЯ?</div>';
+ var em=['😞','😕','😐','🙂','😍'];
+ for(var e=0;e<5;e++){var on=S.mood[today()]&&S.mood[today()].s===e+1;h+='<button class="moji'+(on?' on':'')+'" onclick="setMood('+(e+1)+')">'+em[e]+'</button>';}
+ h+='<textarea class="note" id="mnote" placeholder="Заметка о дне (необязательно)">'+(S.mood[today()]?esc(S.mood[today()].n||''):'')+'</textarea>';
+ h+='<button class="btn" onclick="saveMood()">Сохранить</button></div>';
+ h+='<div class="lbl">КАЛЕНДАРЬ НАСТРОЕНИЯ · 5 НЕДЕЛЬ</div><div class="card">'+calendarHTML(function(k){return S.mood[k]?'m'+S.mood[k].s:'';})+'</div>';
+ h+='<div class="card"><div class="lbl">САМОЧУВСТВИЕ ЗА ВСЁ ВРЕМЯ</div><div class="bar"><i style="width:'+pct+'%"></i></div><div class="psub" style="margin-top:6px">'+pct+'% · записей: '+n+'</div></div>';
+ return h;
+}
+function vProfile(){
+ var h=profileCard('Серия: '+curStreak()+' · Лучшая: '+bestStreak()+' · Всего дней: '+closedDays());
+ h+='<div class="card"><div class="lbl">СТАТИСТИКА</div><div class="psub">Закрытых дней: '+closedDays()+' · Серия: '+curStreak()+' · Лучшая серия: '+bestStreak()+' · Огонёчков получено: 🔥 '+S.gotFire+'</div>';
+ h+='<div class="lbl">ЗАМОРОЗКИ · '+S.freezes+' ИЗ 2</div>';
+ if(S.freezes>0)h+='<button class="btn2" onclick="useFreeze()">❄️ Использовать заморозку сегодня</button>';
+ h+='</div>';
+ h+='<div class="lbl">ДОСТИЖЕНИЯ</div><div class="card">';
+ for(var i=0;i<ACH.length;i++){var a=ACH[i],got=a.ok();
+  h+='<div class="ach'+(got?' got':'')+'"><div class="ic">'+a.ic+'</div><div><div class="an">'+a.n+'</div><div class="ad">'+a.d+'</div></div><div class="st">'+(got?'✅':'🔒')+'</div></div>';}
+ h+='</div>';
+ h+='<div class="lbl">КАЛЕНДАРЬ · 5 НЕДЕЛЬ</div><div class="card">'+habCalendar()+'</div>';
+ h+='<div class="lbl">НАСТРОЙКИ</div><div class="card">';
+ h+=setRow('morning','☀️ Утреннее напоминание — задания на день · 08:00');
+ h+=setRow('water1','💧 Напоминание пить воду · 10:00');
+ h+=setRow('water2','💧 Напоминание пить воду · 15:00');
+ h+=setRow('evening','🌙 Вечернее напоминание — придёт, если день не закрыт · 20:00');
+ h+=setRow('hideName','🙈 Скрыть имя в рейтинге');
+ h+='<div class="psub" style="margin-top:10px">Время одно для всех участников бота и совпадает с рассылками в Botmother. Тумблер включает напоминание лично для тебя.</div></div>';
+ h+='<button class="btn" onclick="resetAll()">Сбросить весь прогресс</button>';
+ return h;
+}
+function setRow(k,t){return '<div class="setrow"><div style="flex:1;padding-right:10px;font-size:14px;font-weight:600">'+t+'</div><button class="sw'+(S.settings[k]?' on':'')+'" onclick="tgl(\''+k+'\')"></button></div>';}
+function go(t){tab=t;render();}
+function render(){safe(function(){renderPills();var v=document.getElementById('view');
+ if(tab==='habits')v.innerHTML=vHabits();else if(tab==='rating')v.innerHTML=vRating();else if(tab==='challenges')v.innerHTML=vChall();else if(tab==='mood')v.innerHTML=vMood();else v.innerHTML=vProfile();});}
+function toggleHabit(id){var ds=today();if(!S.done[ds])S.done[ds]={};if(S.done[ds][id]){delete S.done[ds][id];}else{S.done[ds][id]=true;if(S.habits.length&&doneCount(ds)===S.habits.length){S.days[ds]=true;showMotiv('День закрыт! Серия: '+curStreak()+' 🏆');}else showMotiv(MOTIV[Math.floor(Math.random()*MOTIV.length)]);}save();render();}
+function showMotiv(t){var m=document.getElementById('motiv');if(m){m.style.display='block';m.textContent=t;}}
+function addHabit(){var e=document.getElementById('newhab'),v=(e.value||'').trim();if(!v)return;S.habits.push({id:'h'+Date.now(),name:v});e.value='';save();render();}
+function delHabit(id){S.habits=S.habits.filter(function(h){return h.id!==id;});save();render();}
+function addChall(){var n=(document.getElementById('chname').value||'').trim(),d=parseInt(document.getElementById('chdays').value)||21;if(!n)return;S.challs.push({id:'c'+Date.now(),name:n,days:d,done:0,members:[]});save();render();}
+function acceptCh(id){var c=S.challs.filter(function(x){return x.id===id;})[0];if(c&&c.members.indexOf(ME.id)<0){c.members.push(ME.id);save();render();}}
+function markCh(id){var c=S.challs.filter(function(x){return x.id===id;})[0];if(c&&c.done<c.days){c.done++;save();render();}}
+function delCh(id){S.challs=S.challs.filter(function(x){return x.id!==id;});save();render();}
+function setMood(s){if(!S.mood[today()])S.mood[today()]={};S.mood[today()].s=s;save();render();}
+function saveMood(){var e=document.getElementById('mnote');if(!S.mood[today()])S.mood[today()]={s:3};S.mood[today()].n=e.value;save();render();}
+function tgl(k){S.settings[k]=!S.settings[k];save();render();}
+function useFreeze(){if(S.freezes>0&&!dayClosed(today())){S.frozen[today()]=true;S.freezes--;save();render();}}
+function resetAll(){S=load===null?null:{habits:[],done:{},days:{},frozen:{},challs:[],mood:{},gave:{},gotFire:0,settings:{morning:true,water1:true,water2:true,evening:true,hideName:false},freezes:2};save();render();}
+render();
+</script>
+</body>
+</html>
