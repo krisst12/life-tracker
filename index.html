@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Трекер LIFE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,Arial,sans-serif}
+body{background:#f2f2f7;padding-bottom:90px}
+#err{display:none;background:#e53935;color:#fff;padding:8px 12px;font-size:12px;word-break:break-all}
+#app{max-width:600px;margin:0 auto;padding:12px}
+.hdr{background:#FFD600;border-radius:16px;padding:14px;margin-bottom:12px}
+.hdr h1{font-size:22px}
+.badge{display:inline-block;background:#f6d900;border:1px solid #d4b800;border-radius:8px;padding:2px 8px;font-size:12px;margin-top:4px}
+.tabs{display:flex;gap:4px;margin-bottom:12px}
+.tab{flex:1;text-align:center;padding:8px 2px;border-radius:10px;background:#e4e4e9;font-size:11px;cursor:pointer;border:none}
+.tab.on{background:#111;color:#FFD600;font-weight:700}
+.card{background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.seclbl{font-size:11px;letter-spacing:1px;color:#888;margin:14px 4px 8px;font-weight:700}
+.pcard{display:flex;align-items:center;gap:10px}
+.pcard img,.pav{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#FFD600;display:flex;align-items:center;justify-content:center;font-weight:700}
+.pname{font-weight:700;font-size:16px}
+.psub{font-size:12px;color:#888}
+.stat3{display:flex;gap:8px;margin-top:10px}
+.stat3 div{flex:1;background:#f2f2f7;border-radius:12px;padding:8px;text-align:center}
+.stat3 b{font-size:20px;display:block}
+.stat3 span{font-size:10px;color:#888}
+.hrow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #f0f0f0}
+.circ{width:26px;height:26px;border-radius:50%;border:2px solid #ccc;flex-shrink:0;cursor:pointer}
+.circ.on{background:#FFD600;border-color:#e6b800}
+.hname{flex:1;font-size:15px}
+.done .hname{text-decoration:line-through;color:#999}
+.xbtn{color:#999;font-size:18px;cursor:pointer;padding:2px 6px}
+.addbtn{width:100%;background:#111;color:#FFD600;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+input[type=text],input[type=number],input[type=time]{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-top:6px}
+.bar{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:#FFD600}
+.mot{background:#fff8d6;border-radius:10px;padding:8px 10px;font-size:13px;margin-top:8px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal span{text-align:center;font-size:9px;color:#999;padding-bottom:2px}
+.cal div{aspect-ratio:1;border-radius:8px;background:#e8e8ec;display:flex;align-items:center;justify-content:center;font-size:11px;color:#bbb}
+.cal .c1{background:#fff3c4;color:#8a7500}
+.cal .c2{background:#FFD600;color:#111;font-weight:700}
+.cal .today{outline:2px solid #111;outline-offset:-2px;color:#111}
+.row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;gap:8px}
+.switch{position:relative;width:46px;height:26px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.sl{position:absolute;inset:0;background:#ccc;border-radius:13px;cursor:pointer;transition:.2s}
+.sl:before{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s}
+.switch input:checked+.sl{background:#111}
+.switch input:checked+.sl:before{transform:translateX(20px)}
+.mood{font-size:34px;cursor:pointer;padding:6px;border-radius:12px;border:2px solid transparent;background:#f6f6f8}
+.mood.on{border-color:#111;background:#FFD600}
+.chal{border:1px solid #eee;border-radius:12px;padding:10px;margin-bottom:10px}
+.small{font-size:11px;color:#999}
+button.mini{background:#f2f2f7;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
+button.mini.dark{background:#111;color:#FFD600}
+.note{text-align:center;color:#999;font-size:12px;padding:16px 0}
+.avatar{width:52px;height:52px;border-radius:50%;overflow:hidden;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.ach{display:inline-block;background:#eee;color:#aaa;border-radius:10px;padding:6px 10px;font-size:11px;margin:3px;text-align:center;min-width:100px}
+.ach.open{background:#FFD600;color:#111;font-weight:700}
+</style>
+</head>
+<body>
+<div id="err"></div>
+<div id="app">Загрузка…</div>
+<script>
+window.onerror = function(m, s, l){
+  var e = document.getElementById('err');
+  if(e){ e.style.display='block'; e.textContent = 'Ошибка: ' + m + ' (строка ' + l + ')'; }
+};
+(function(){
+try{
+var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if(tg){ try{ tg.ready(); tg.expand(); }catch(e){} }
+var tu = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
+var USER = {
+  id: tu ? String(tu.id) : 'guest',
+  name: tu ? ((tu.first_name||'') + ' ' + (tu.last_name||'')).trim() : 'Гость',
+  photo: (tu && tu.photo_url) ? tu.photo_url : ''
+};
+if(!USER.name){ USER.name = 'Участник'; }
+
+var DEF = {
+  habits: [],
+  days: {},
+  challenges: [],
+  moods: {},
+  firesGiven: {},
+  firesRecv: 0,
+  settings: { morning:true, morningTime:'07:00', evening:true, eveningTime:'20:00', water:true, waterTime:'12:00', hide:false }
+};
+var KEY = 'tracker_life_' + USER.id;
+function load(){
+  try{
+    var d = JSON.parse(localStorage.getItem(KEY));
+    if(d && typeof d === 'object'){
+      if(!d.settings) d.settings = DEF.settings;
+      for(var k in DEF.settings){ if(d.settings[k] === undefined) d.settings[k] = DEF.settings[k]; }
+      return d;
+    }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEF));
+}
+var data = load();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ds(d){ return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
+function today(){ return ds(new Date()); }
+function stateOn(date){
+  var day = data.days[date];
+  if(!day || !data.habits.length) return 0;
+  var n = 0;
+  for(var i=0;i<data.habits.length;i++){ if(day[data.habits[i].name]) n++; }
+  if(n >= data.habits.length) return 2;
+  return n > 0 ? 1 : 0;
+}
+function streak(){
+  var s = 0, d = new Date(), first = true;
+  for(var i=0;i<400;i++){
+    var st = stateOn(ds(d));
+    if(st === 2){ s++; }
+    else if(first){ first = false; }
+    else { break; }
+    first = false;
+    d.setDate(d.getDate()-1);
+  }
+  return s;
+}
+function bestStreak(){
+  var keys = Object.keys(data.days).sort(), best = 0, cur = 0, prev = null;
+  function toT(s){ return new Date(s + 'T00:00:00'); }
+  for(var i=0;i<keys.length;i++){
+    if(stateOn(keys[i]) === 2){
+      if(prev !== null){
+        var diff = Math.round((toT(keys[i]) - toT(prev)) / 86400000);
+        cur = (diff === 1) ? cur + 1 : 1;
+      } else { cur = 1; }
+      if(cur > best) best = cur;
+      prev = keys[i];
+    } else { prev = null; cur = 0; }
+  }
+  return best;
+}
+function totalDays(){
+  var c = 0;
+  for(var k in data.days){ if(stateOn(k) === 2) c++; }
+  return c;
+}
+function chDone(){
+  var c = 0;
+  for(var i=0;i<data.challenges.length;i++){ if(data.challenges[i].progress >= data.challenges[i].days) c++; }
+  return c;
+}
+function stats(){ return { st: streak(), best: Math.max(bestStreak(), streak()), total: totalDays(), ch: chDone(), sup: data.firesGiven.__total || 0 }; }
+function motFor(n, total){
+  if(n >= total) return '🎉 День закрыт! Серия: ' + streak() + '. Так держать!';
+  var m = ['Ещё один шаг к цели! 🔥','Отлично, продолжай! 💪','Молодец, не останавливайся! ✨','Ты справляешься! 🚀','Каждая галочка — победа! 🏆','Дисциплина — твой супергерой! 🔥'];
+  return m[n % m.length];
+}
+function calHtml(colored){
+  var out = ['<span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>'];
+  var d = new Date(); d.setDate(d.getDate() - 34);
+  var start = new Date(d); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  var t = today();
+  for(var i=0;i<42;i++){
+    var dd = new Date(start); dd.setDate(start.getDate() + i);
+    var key = ds(dd);
+    var cls = '';
+    if(dd < new Date(t + 'T00:00:00')){
+      var st = stateOn(key);
+      if(st === 2) cls = 'c2'; else if(st === 1) cls = 'c1';
+      if(colored && data.moods[key]){
+        var sc = data.moods[key].score;
+        cls = sc <= 2 ? 'c1' : (sc === 3 ? 'c1' : 'c2');
+        if(sc <= 1) cls = '';
+      }
+    }
+    if(key === t) cls += ' today';
+    out.push('<div class="' + cls + '">' + dd.getDate() + '</div>');
+  }
+  return '<div class="cal">' + out.join('') + '</div>';
+}
+function pctToday(){
+  if(!data.habits.length) return 0;
+  var day = data.days[today()] || {}, n = 0;
+  for(var i=0;i<data.habits.length;i++){ if(day[data.habits[i].name]) n++; }
+  return Math.round(n * 100 / data.habits.length);
+}
+function pct30(){
+  var done = 0, all = 0, d = new Date();
+  for(var i=0;i<30;i++){
+    var key = ds(d);
+    if(data.habits.length){
+      all += data.habits.length;
+      var day = data.days[key] || {};
+      for(var j=0;j<data.habits.length;j++){ if(day[data.habits[j].name]) done++; }
+    }
+    d.setDate(d.getDate()-1);
+  }
+  return all ? Math.round(done * 100 / all) : 0;
+}
+
+var TAB = 'habits';
+function avatarHtml(size){
+  if(USER.photo) return '<div class="avatar"><img src="' + esc(USER.photo) + '" alt=""></div>';
+  return '<div class="avatar">' + esc(USER.name.charAt(0)) + '</div>';
+}
+function render(){
+  var app = document.getElementById('app');
+  var h = '';
+  h += '<div class="hdr"><h1>🔥 Трекер LIFE</h1><span class="badge">Версия 14</span></div>';
+  h += '<div class="tabs">';
+  var names = { habits:'Привычки', rating:'Рейтинг', challenges:'Вызовы', mood:'Настроение', profile:'Профиль' };
+  for(var k in names){ h += '<button class="tab ' + (TAB===k?'on':'') + '" data-act="tab" data-tab="' + k + '">' + names[k] + '</button>'; }
+  h += '</div>';
+  if(TAB === 'habits') h += rHabits();
+  if(TAB === 'rating') h += rRating();
+  if(TAB === 'challenges') h += rChal();
+  if(TAB === 'mood') h += rMood();
+  if(TAB === 'profile') h += rProfile();
+  app.innerHTML = h;
+}
+function rHabits(){
+  var h = '<div class="card pcard">' + avatarHtml() + '<div><div class="pname">' + esc(USER.name) + '</div><div class="psub">Серия: ' + streak() + ' · дней: ' + totalDays() + '</div></div></div>';
+  h += '<div class="card"><div class="small">Выполнено сегодня: <b>' + pctToday() + '%</b> · за 30 дней: <b>' + pct30() + '%</b></div><div class="bar"><i style="width:' + pctToday() + '%"></i></div>';
+  if(data.habits.length === 0){ h += '<div class="note">Пока нет привычек. Добавь первую!</div>'; }
+  var day = data.days[today()] || {};
+  for(var i=0;i<data.habits.length;i++){
+    var hb = data.habits[i];
+    var on = !!day[hb.name];
+    h += '<div class="hrow ' + (on?'done':'') + '"><div class="circ ' + (on?'on':'') + '" data-act="tog" data-i="' + i + '"></div><div class="hname">' + esc(hb.name) + '</div><div class="xbtn" data-act="delh" data-i="' + i + '">✕</div></div>';
+  }
+  h += '<input type="text" id="hbName" placeholder="Новая привычка"><button class="addbtn" data-act="addh">＋ Добавить привычку</button></div>';
+  h += '<div class="seclbl">КАЛЕНДАРЬ · 5 НЕДЕЛЬ</div><div class="card">' + calHtml(false) + '</div>';
+  return h;
+}
+function rRating(){
+  var s = stats();
+  var shown = data.settings.hide ? 'Скрытый участник' : USER.name;
+  var h = '<div class="card"><div class="pcard">' + avatarHtml() + '<div><div class="pname">' + esc(shown) + '</div><div class="psub">' + (stateOn(today())===2 ? '✅ всё выполнено' : 'сегодня: ' + pctToday() + '%') + '</div></div><div style="margin-left:auto;text-align:center"><b style="font-size:20px">' + s.total + '</b><div class="small">дней</div><div style="font-size:16px">🔥 ' + data.firesRecv + '</div></div></div></div>';
+  h += '<div class="note">Другие участники появятся здесь, когда подключим общий сервер. Пока в рейтинге только ты.</div>';
+  return h;
+}
+function rChal(){
+  var h = '<div class="card"><input type="text" id="chName" placeholder="Название вызова"><input type="number" id="chDays" placeholder="Срок, дней (например 30)"><button class="addbtn" data-act="addch">🚀 Бросить вызов</button></div>';
+  if(!data.challenges.length) h += '<div class="note">Вызовов пока нет. Брось первый!</div>';
+  for(var i=0;i<data.challenges.length;i++){
+    var c = data.challenges[i];
+    var done = c.progress >= c.days;
+    h += '<div class="chal"><div style="display:flex;justify-content:space-between"><b>' + esc(c.name) + '</b><span class="xbtn" data-act="delch" data-i="' + i + '">✕</span></div>';
+    h += '<div class="small">' + c.days + ' дней · участников: ' + c.members + (done ? ' · 🎉 пройден!' : '') + '</div>';
+    h += '<div class="bar"><i style="width:' + Math.min(100, Math.round(c.progress*100/c.days)) + '%"></i></div>';
+    if(!done) h += '<button class="mini dark" data-act="markch" data-i="' + i + '">＋ Отметить день</button> ';
+    h += (c.joined ? '<button class="mini">✔ Вы приняли</button>' : '<button class="mini dark" data-act="joinch" data-i="' + i + '">Принять вызов</button>');
+    h += '</div>';
+  }
+  return h;
+}
+function rMood(){
+  var t = today(), m = data.moods[t];
+  var avg = 0, n = 0;
+  for(var k in data.moods){ avg += data.moods[k].score; n++; }
+  var pct = n ? Math.round(avg * 100 / (n*5)) : 0;
+  var h = '<div class="card"><div class="seclbl" style="margin-top:0">КАК ТЫ СЕГОДНЯ?</div><div style="display:flex;justify-content:space-around">';
+  var emo = ['😞','😕','😐','🙂','😄'];
+  for(var i=1;i<=5;i++){ h += '<span class="mood ' + (m && m.score===i ? 'on' : '') + '" data-act="mood" data-v="' + i + '">' + emo[i-1] + '</span>'; }
+  h += '</div><input type="text" id="moodNote" placeholder="Заметка (необязательно)" value="' + (m ? esc(m.note||'') : '') + '">';
+  h += '<button class="addbtn" data-act="savemood">Сохранить</button></div>';
+  h += '<div class="card"><div class="small">Самочувствие за всё время: <b>' + pct + '%</b></div></div>';
+  h += '<div class="seclbl">КАЛЕНДАРЬ НАСТРОЕНИЯ · 5 НЕДЕЛЬ</div><div class="card">' + calHtml(true) + '</div>';
+  return h;
+}
+function rProfile(){
+  var s = stats();
+  var defs = [
+    ['🌱 Первый шаг', s.total >= 1], ['⚡ Разгон', s.st >= 3], ['🔥 Неделя дисциплины', s.st >= 7],
+    ['💪 Две недели', s.st >= 14], ['🥇 Месяц силы', s.st >= 30], ['💎 Полсотни', s.st >= 50],
+    ['👑 Легенда', s.st >= 100], ['📅 30 дней в деле', s.total >= 30], ['🎯 Вызов принят', s.ch >= 1],
+    ['🏆 Охотник за вызовами', s.ch >= 5], ['🤝 Опора сообщества', s.sup >= 10]
+  ];
+  var h = '<div class="card"><div class="pcard">' + avatarHtml() + '<div><div class="pname">' + esc(data.settings.hide ? 'Скрытый участник' : USER.name) + '</div><div class="psub">Участник сообщества</div></div></div>';
+  h += '<div class="stat3"><div><b>' + s.st + '</b><span>текущая серия</span></div><div><b>' + s.best + '</b><span>лучшая серия</span></div><div><b>' + s.total + '</b><span>всего дней</span></div></div>';
+  h += '<div class="mot" style="margin-top:10px">❄️ <b>Заморозки: 2 из 2</b><br><span class="small">Если пропустите день, заморозка сработает сама и сохранит серию.</span></div></div>';
+  h += '<div class="seclbl">ДОСТИЖЕНИЯ · ' + defs.filter(function(d){return d[1]}).length + ' ИЗ ' + defs.length + '</div><div class="card">';
+  for(var i=0;i<defs.length;i++){ h += '<span class="ach ' + (defs[i][1]?'open':'') + '">' + defs[i][0] + '</span>'; }
+  h += '</div>';
+  h += '<div class="seclbl">КАЛЕНДАРЬ · 5 НЕДЕЛЬ</div><div class="card">' + calHtml(false) + '</div>';
+  var st = data.settings;
+  h += '<div class="seclbl">НАСТРОЙКИ</div><div class="card">';
+  h += '<div class="row"><div><b>Утреннее напоминание</b><div class="small">Задания на день</div></div><label class="switch"><input type="checkbox" data-act="set" data-k="morning" ' + (st.morning?'checked':'') + '><span class="sl"></span></label></div>';
+  h += '<div class="row"><div><b>Время утром</b><div class="small">По твоему часовому поясу</div></div><input type="time" style="width:110px" value="' + st.morningTime + '" data-act="time" data-k="morningTime"></div>';
+  h += '<div class="row"><div><b>Вечернее напоминание</b><div class="small">Придёт, если день не закрыт</div></div><label class="switch"><input type="checkbox" data-act="set" data-k="evening" ' + (st.evening?'checked':'') + '><span class="sl"></span></label></div>';
+  h += '<div class="row"><div><b>Время вечером</b><div class="small">По твоему часовому поясу</div></div><input type="time" style="width:110px" value="' + st.eveningTime + '" data-act="time" data-k="eveningTime"></div>';
+  h += '<div class="row"><div><b>Напоминание пить воду 💧</b></div><label class="switch"><input type="checkbox" data-act="set" data-k="water" ' + (st.water?'checked':'') + '><span class="sl"></span></label></div>';
+  h += '<div class="row"><div><b>Время воды</b><div class="small">С 10:00 до 20:00</div></div><input type="time" style="width:110px" min="10:00" max="20:00" value="' + st.waterTime + '" data-act="time" data-k="waterTime"></div>';
+  h += '<div class="row"><div><b>Скрыть имя в рейтинге</b></div><label class="switch"><input type="checkbox" data-act="set" data-k="hide" ' + (st.hide?'checked':'') + '><span class="sl"></span></label></div>';
+  h += '<div class="row"><div><b>Сбросить весь прогресс</b><div class="small">Удалит все данные</div></div><button class="mini" data-act="reset">Сбросить</button></div>';
+  h += '</div>';
+  return h;
+}
+
+document.getElementById('app').addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('[data-act]') : null;
+  if(!el) return;
+  var act = el.getAttribute('data-act');
+  try{
+    if(act === 'tab'){ TAB = el.getAttribute('data-tab'); render(); return; }
+    if(act === 'tog'){
+      var t = today();
+      if(!data.days[t]) data.days[t] = {};
+      var name = data.habits[+el.getAttribute('data-i')].name;
+      if(data.days[t][name]){ delete data.days[t][name]; }
+      else {
+        data.days[t][name] = true;
+        var n = 0; for(var k in data.days[t]) n++;
+        if(n >= data.habits.length){ alert('🎉 День закрыт! Серия: ' + streak()); }
+        else { alert(motFor(n, data.habits.length)); }
+      }
+      save(); render(); return;
+    }
+    if(act === 'delh'){ data.habits.splice(+el.getAttribute('data-i'),1); save(); render(); return; }
+    if(act === 'addh'){
+      var inp = document.getElementById('hbName');
+      if(inp && inp.value.trim()){ data.habits.push({ name: inp.value.trim() }); save(); render(); }
+      return;
+    }
+    if(act === 'addch'){
+      var cn = document.getElementById('chName'), cd = document.getElementById('chDays');
+      if(cn && cn.value.trim()){
+        data.challenges.push({ name: cn.value.trim(), days: Math.max(1, +cd.value || 30), progress: 0, members: 1, joined: true });
+        save(); render();
+      }
+      return;
+    }
+    if(act === 'joinch'){ var c = data.challenges[+el.getAttribute('data-i')]; c.joined = true; c.members++; save(); render(); return; }
+    if(act === 'markch'){
+      var c2 = data.challenges[+el.getAttribute('data-i')];
+      if(c2.progress < c2.days){ c2.progress++; if(c2.progress >= c2.days) alert('🎉 Вызов пройден! Достижение «Вызов принят» открыто.'); }
+      save(); render(); return;
+    }
+    if(act === 'delch'){ data.challenges.splice(+el.getAttribute('data-i'),1); save(); render(); return; }
+    if(act === 'mood'){ el.setAttribute('data-sel','1');
+      var t2 = today();
+      data.moods[t2] = data.moods[t2] || { score:0, note:'' };
+      data.moods[t2].score = +el.getAttribute('data-v');
+      save(); render(); return;
+    }
+    if(act === 'savemood'){
+      var t3 = today();
+      if(!data.moods[t3]) data.moods[t3] = { score:3, note:'' };
+      var mn = document.getElementById('moodNote');
+      data.moods[t3].note = mn ? mn.value : '';
+      save(); alert('Настроение сохранено ✨'); render(); return;
+    }
+    if(act === 'reset'){
+      if(confirm('Точно удалить весь прогресс?')){
+        data = JSON.parse(JSON.stringify(DEF)); save(); render();
+      }
+      return;
+    }
+  }catch(err){ window.onerror(err.message, '', 0); }
+});
+document.getElementById('app').addEventListener('change', function(e){
+  var el = e.target;
+  var act = el.getAttribute && el.getAttribute('data-act');
+  if(act === 'set'){ data.settings[el.getAttribute('data-k')] = el.checked; save(); }
+  if(act === 'time'){ data.settings[el.getAttribute('data-k')] = el.value || el.getAttribute('data-k') === 'waterTime' ? (el.value || '12:00') : '07:00'; save(); }
+});
+
+render();
+}catch(err){ window.onerror(err.message, '', 0); }
+})();
+</script>
+</body>
+</html>
